@@ -11,6 +11,14 @@
 - source .venv/bin/activate (linux/mac)
 - .\env\Scripts\activate.bat (windows)
 
-### Install dependencies:
+### Instalar as dependências:
 
 - pip install -r requirements.txt
+
+### Configurar o ambiente:
+
+- Copiar o arquivo .env.example para .env e preencher os valores
+
+### Instalar o Playwright
+
+- playwright install

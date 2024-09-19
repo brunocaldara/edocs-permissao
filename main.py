@@ -7,8 +7,23 @@ from playwright.sync_api import sync_playwright
 load_dotenv()
 
 with sync_playwright() as p:
+    # Configuração de Proxy
+    proxy_url = os.getenv("PROXY_URL")
+    proxy_porta = os.getenv("PROXY_PORTA")
+    proxy_usuario = os.getenv("PROXY_USUARIO")
+    proxy_senha = os.getenv("PROXY_SENHA")
+    proxy_config = None
+
+    if (proxy_url is not None and proxy_porta is not None and
+            proxy_usuario is not None and proxy_senha is not None):
+        proxy_config = {
+            "server": f"{proxy_url}:{proxy_porta}",
+            "username": proxy_usuario,
+            "password": proxy_senha
+        }
+
     browser = p.chromium.launch(
-        headless=False, slow_mo=50, args=['--start-maximized'])
+        headless=False, slow_mo=50, args=['--start-maximized'], proxy=proxy_config)
     context = browser.new_context(no_viewport=True)
     page = context.new_page()
     page.goto(os.getenv("ACESSO_CIDADAO_URL"))
@@ -30,7 +45,7 @@ with sync_playwright() as p:
     # page.get_by_role("link", name="Grupos", exact=True).click()
 
     page.get_by_placeholder("CPF ou e-mail").click()
-    page.get_by_placeholder("CPF ou e-mail").fill("")
+    page.get_by_placeholder("CPF ou e-mail").fill("104.093.137-50")
     page.get_by_text("search").click()
     page.get_by_role("link", name="assignment_ind").click()
 
