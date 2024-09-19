@@ -6,7 +6,7 @@ import re
 from dotenv import load_dotenv
 from playwright.async_api import async_playwright
 
-from enums import GRUPO_E_SERVIDOR
+from enums import ACESSO_CIDADAO_ADMIN, GRUPO_E_SERVIDOR
 from helpers import retornar_linhas_tabela
 
 load_dotenv()
@@ -49,6 +49,20 @@ async def main():
     async def acessar_pagina(pagina, url):
         return await pagina.goto(url)
 
+    async def acessar_pagina_sistemas(pagina, acesso_cidadao_admin):
+        await pagina.locator(f"#{acesso_cidadao_admin}").click()
+        await pagina.get_by_role("link", name="E-Docs sigades").click()
+        await pagina.get_by_role("link", name="Verificar").click()
+
+    async def acessar_pagina_grupos_e_servidores(pagina, acesso_cidadao_admin, grupo_e_servidor):
+        await pagina.locator(f"#{acesso_cidadao_admin}").click()
+        await pagina.get_by_role("link", name=grupo_e_servidor, exact=True).click()
+
+    async def pesquisar_por_cpf_pagina_sistemas(pagina, cpf):
+        await pagina.get_by_role("link", name="Adicionar").click()
+        await pagina.get_by_label("CPF ou e-mail").fill(cpf)
+        await pagina.get_by_role("button", name="Pesquisar").click()
+
     async def realizar_login(pagina):
         await pagina.get_by_role("button", name="Login via Acesso Cidadão").click()
         await pagina.get_by_placeholder("CPF").fill(os.getenv("ACESSO_CIDADAO_LOGIN"))
@@ -56,12 +70,7 @@ async def main():
             os.getenv("ACESSO_CIDADAO_SENHA"))
         await pagina.get_by_role("button", name="Entrar", exact=True).click()
 
-    async def acessar_pagina_grupos_e_servidores(pagina, enumeracao):
-        # await page.locator('#sistemas').click()
-        await pagina.locator('#gruposservidores').click()
-        await pagina.get_by_role("link", name=enumeracao, exact=True).click()
-
-    async def pesquisar_por_cpf(pagina, cpf):
+    async def pesquisar_por_cpf_pagina_servidor(pagina, cpf):
         await pagina.get_by_placeholder("CPF ou e-mail").fill(cpf)
         await pagina.get_by_text("search").click()
 
@@ -144,8 +153,12 @@ async def main():
         await realizar_login(pagina)
         url_acesso_cidadao_admin = await buscar_url_acesso_cidadao_admin(pagina)
         await acessar_pagina(pagina, url_acesso_cidadao_admin)
-        await acessar_pagina_grupos_e_servidores(pagina, GRUPO_E_SERVIDOR.SERVIDOR.value)
-        await pesquisar_por_cpf(pagina, "104.093.137-50")
+
+        # await acessar_pagina_sistemas(pagina, ACESSO_CIDADAO_ADMIN.SISTEMAS.value)
+        # await pesquisar_por_cpf_pagina_sistemas(pagina, "104.093.137-50")
+
+        await acessar_pagina_grupos_e_servidores(pagina, ACESSO_CIDADAO_ADMIN.GRUPOS_E_SERVIDORES.value, GRUPO_E_SERVIDOR.SERVIDOR.value)
+        await pesquisar_por_cpf_pagina_servidor(pagina, "104.093.137-50")
         await acessar_papeis(pagina)
 
         papel_existe = await verificar_papel(pagina, "TESTE DO CALDARA")
@@ -153,8 +166,8 @@ async def main():
         if not papel_existe:
             await adicionar_papel(pagina, "TESTE DO CALDARA")
             await cadastrar_lotacao(pagina, "TESTE DO CALDARA", "LAB TOX")
-        else:
-            await remover_papel(pagina, "TESTE DO CALDARA")
+        # else:
+        #    await remover_papel(pagina, "TESTE DO CALDARA")
 
         await pagina.pause()
     # browser.close()
