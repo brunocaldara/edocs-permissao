@@ -15,10 +15,10 @@
 
 - pip install -r requirements.txt
 
-### Configurar o ambiente:
-
-- Copiar o arquivo .env.example para .env e preencher os valores
-
 ### Instalar o Playwright
 
 - playwright install
+
+### Configurar o ambiente:
+
+- Copiar o arquivo .env.example para .env e preencher os valores

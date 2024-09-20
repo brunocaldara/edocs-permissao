@@ -20,8 +20,8 @@ async def main():
         proxy_senha = os.getenv("PROXY_SENHA")
         proxy_config = None
 
-        if (proxy_url is not None and proxy_porta is not None and
-                proxy_usuario is not None and proxy_senha is not None):
+        if (proxy_url is not '' and proxy_porta is not '' and
+                proxy_usuario is not '' and proxy_senha is not ''):
             proxy_config = {
                 "server": f"{proxy_url}:{proxy_porta}",
                 "username": proxy_usuario,
