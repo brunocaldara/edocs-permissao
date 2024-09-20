@@ -161,13 +161,13 @@ async def main():
         await pesquisar_por_cpf_pagina_servidor(pagina, "104.093.137-50")
         await acessar_papeis(pagina)
 
-        papel_existe = await verificar_papel(pagina, "TESTE DO CALDARA")
-        print("papel_existe ", papel_existe)
-        if not papel_existe:
-            await adicionar_papel(pagina, "TESTE DO CALDARA")
-            await cadastrar_lotacao(pagina, "TESTE DO CALDARA", "LAB TOX")
+        # papel_existe = await verificar_papel(pagina, "TESTE DO CALDARA")
+        # print("papel_existe ", papel_existe)
+        # if not papel_existe:
+        #     await adicionar_papel(pagina, "TESTE DO CALDARA")
+        #     await cadastrar_lotacao(pagina, "TESTE DO CALDARA", "LAB TOX")
         # else:
-        #    await remover_papel(pagina, "TESTE DO CALDARA")
+        #     await remover_papel(pagina, "TESTE DO CALDARA")
 
         await pagina.pause()
     # browser.close()
