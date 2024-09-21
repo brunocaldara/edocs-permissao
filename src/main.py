@@ -20,8 +20,8 @@ async def main():
         proxy_senha = os.getenv("PROXY_SENHA")
         proxy_config = None
 
-        if (proxy_url is not '' and proxy_porta is not '' and
-                proxy_usuario is not '' and proxy_senha is not ''):
+        if (proxy_url != '' and proxy_porta != '' and
+                proxy_usuario != '' and proxy_senha != ''):
             proxy_config = {
                 "server": f"{proxy_url}:{proxy_porta}",
                 "username": proxy_usuario,
@@ -91,7 +91,7 @@ async def main():
 
         return papel_existe
 
-    async def adicionar_papel(pagina, papel):
+    async def cadastrar_papel(pagina, papel):
         await pagina.get_by_role("link", name="Adicionar", exact=True).click()
         await pagina.get_by_text("Selecione um período 1 mês").click()
         await pagina.get_by_role("option", name="ano (máximo)").click()
@@ -147,6 +147,23 @@ async def main():
                 await pagina.get_by_role("button", name="Selecionar").click()
                 await pagina.get_by_label("Voltar").click()
 
+    async def cadastrar_permissoes(pagina, papel, permissoes):
+        linhas_papeis = await retornar_linhas_tabela(pagina)
+        quantidade_linhas = await linhas_papeis.count()
+        linha_papel = None
+
+        for i in range(quantidade_linhas):
+            colunas_papeis = linhas_papeis.nth(i).locator("td")
+            for j in range(await colunas_papeis.count()):
+                texto = await colunas_papeis.nth(j).inner_text()
+                if operator.contains(texto, papel):
+                    linha_papel = linhas_papeis.nth(i)
+                    break
+
+        if linha_papel is not None:
+            link_permissoes = linha_papel.locator("a")
+            await link_permissoes.click()
+
     async with async_playwright() as p:
         pagina = await configurar_navegador()
         await acessar_pagina(pagina, os.getenv("ACESSO_CIDADAO_URL"))
@@ -154,20 +171,34 @@ async def main():
         url_acesso_cidadao_admin = await buscar_url_acesso_cidadao_admin(pagina)
         await acessar_pagina(pagina, url_acesso_cidadao_admin)
 
-        # await acessar_pagina_sistemas(pagina, ACESSO_CIDADAO_ADMIN.SISTEMAS.value)
-        # await pesquisar_por_cpf_pagina_sistemas(pagina, "104.093.137-50")
+        cpf = "104.093.137-50"
 
-        await acessar_pagina_grupos_e_servidores(pagina, ACESSO_CIDADAO_ADMIN.GRUPOS_E_SERVIDORES.value, GRUPO_E_SERVIDOR.SERVIDOR.value)
-        await pesquisar_por_cpf_pagina_servidor(pagina, "104.093.137-50")
-        await acessar_papeis(pagina)
+        # await acessar_pagina_grupos_e_servidores(pagina, ACESSO_CIDADAO_ADMIN.GRUPOS_E_SERVIDORES.value, GRUPO_E_SERVIDOR.SERVIDOR.value)
+        # await pesquisar_por_cpf_pagina_servidor(pagina, cpf)
+        # await acessar_papeis(pagina)
 
-        # papel_existe = await verificar_papel(pagina, "TESTE DO CALDARA")
+        papel = "TESTE DO CALDARA"
+        lotacao = "LAB TOX"
+
+        await acessar_pagina_sistemas(pagina, ACESSO_CIDADAO_ADMIN.SISTEMAS.value)
+        await pesquisar_por_cpf_pagina_sistemas(pagina, cpf)
+        await cadastrar_permissoes(pagina, f"{papel} ({lotacao})", None)
+
+        # papel_existe = await verificar_papel(pagina, papel)
         # print("papel_existe ", papel_existe)
         # if not papel_existe:
-        #     await adicionar_papel(pagina, "TESTE DO CALDARA")
-        #     await cadastrar_lotacao(pagina, "TESTE DO CALDARA", "LAB TOX")
+        #     await cadastrar_papel(pagina, papel)
+        #     await cadastrar_lotacao(pagina, papel, lotacao)
+        #     await acessar_pagina(pagina, url_acesso_cidadao_admin)
+        #     await acessar_pagina_sistemas(pagina, ACESSO_CIDADAO_ADMIN.SISTEMAS.value)
+        #     await pesquisar_por_cpf_pagina_sistemas(pagina, cpf)
+
+        #     papel_existe = await verificar_papel(pagina, papel)
+        #     print("papel_existe ", papel_existe)
+
+        #     await cadastrar_permissoes(pagina, f"{papel} ({lotacao})", None)
         # else:
-        #     await remover_papel(pagina, "TESTE DO CALDARA")
+        #     await remover_papel(pagina, papel)
 
         await pagina.pause()
     # browser.close()
