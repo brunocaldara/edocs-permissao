@@ -164,6 +164,25 @@ async def main():
             link_permissoes = linha_papel.locator("a")
             await link_permissoes.click()
 
+            # Acessar Caixa de Documentos de Órgão/Setor (Encaminhamentos)
+            await pagina.locator("#perfil-117").check()
+            # Acessar Caixas de Processos de Órgão/Setor (Despachar Processo)
+            await pagina.locator("#perfil-110").check()
+            # Acessar Documentos Credenciados de Órgão/Setor
+            await pagina.locator("#perfil-66").check()
+            # Autuar Processo
+            await pagina.locator("#perfil-95").check()
+            # Reabrir Processos Encerrados do Setor
+            await pagina.locator("#perfil-122").check()
+
+            await pagina.get_by_role("button", name="Salvar").click()
+
+            links = pagina.get_by_role("link", name="Selecionar Orgão")
+            print("links", await links.count())
+            await pagina.get_by_role("textbox").fill("")
+
+            await pagina.get_by_role("button", name="Salvar").click()
+
     async with async_playwright() as p:
         pagina = await configurar_navegador()
         await acessar_pagina(pagina, os.getenv("ACESSO_CIDADAO_URL"))
