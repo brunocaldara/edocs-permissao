@@ -13,6 +13,21 @@ load_dotenv()
 
 
 async def main():
+    sufixo = " - PCIES"
+
+    permissoes_basicas = [
+        # "Acessar Caixa de Documentos de Órgão/Setor (Encaminhamentos)"
+        "perfil-117",
+        # "Acessar Caixas de Processos de Órgão/Setor (Despachar Processo)"
+        "perfil-110",
+        # "Acessar Documentos Credenciados de Órgão/Setor"
+        "perfil-66",
+        # "Autuar Processo"
+        "perfil-95",
+        # "Reabrir Processos Encerrados do Setor"
+        "perfil-122"
+    ]
+
     def configurar_proxy():
         proxy_url = os.getenv("PROXY_URL")
         proxy_porta = os.getenv("PROXY_PORTA")
@@ -80,9 +95,8 @@ async def main():
     async def verificar_papel(pagina, papel):
         papel_existe = False
         linhas_papeis = await retornar_linhas_tabela(pagina)
-        quantidade_linhas = await linhas_papeis.count()
 
-        for i in range(quantidade_linhas):
+        for i in range(await linhas_papeis.count()):
             colunas_papeis = linhas_papeis.nth(i).locator("td")
             for j in range(await colunas_papeis.count()):
                 if operator.contains(await colunas_papeis.nth(j).inner_text(), papel):
@@ -100,11 +114,10 @@ async def main():
 
     async def remover_papel(pagina, papel):
         linhas_papeis = await retornar_linhas_tabela(pagina)
-        quantidade_linhas = await linhas_papeis.count()
         botao_excluir_papel = None
         posicao_coluna_botoes_acoes = 4
 
-        for i in range(quantidade_linhas):
+        for i in range(await linhas_papeis.count()):
             colunas_papeis = linhas_papeis.nth(i).locator("td")
             for j in range(await colunas_papeis.count()):
                 if operator.contains(await colunas_papeis.nth(j).inner_text(), papel):
@@ -147,16 +160,16 @@ async def main():
                 await pagina.get_by_role("button", name="Selecionar").click()
                 await pagina.get_by_label("Voltar").click()
 
-    async def cadastrar_permissoes(pagina, papel, permissoes):
+    async def cadastrar_permissoes(pagina, papel, lotacao):
         linhas_papeis = await retornar_linhas_tabela(pagina)
-        quantidade_linhas = await linhas_papeis.count()
         linha_papel = None
+        papel_lotacao = f"{papel} ({lotacao})"
 
-        for i in range(quantidade_linhas):
+        for i in range(await linhas_papeis.count()):
             colunas_papeis = linhas_papeis.nth(i).locator("td")
             for j in range(await colunas_papeis.count()):
                 texto = await colunas_papeis.nth(j).inner_text()
-                if operator.contains(texto, papel):
+                if operator.contains(texto, papel_lotacao):
                     linha_papel = linhas_papeis.nth(i)
                     break
 
@@ -164,24 +177,22 @@ async def main():
             link_permissoes = linha_papel.locator("a")
             await link_permissoes.click()
 
-            # Acessar Caixa de Documentos de Órgão/Setor (Encaminhamentos)
-            await pagina.locator("#perfil-117").check()
-            # Acessar Caixas de Processos de Órgão/Setor (Despachar Processo)
-            await pagina.locator("#perfil-110").check()
-            # Acessar Documentos Credenciados de Órgão/Setor
-            await pagina.locator("#perfil-66").check()
-            # Autuar Processo
-            await pagina.locator("#perfil-95").check()
-            # Reabrir Processos Encerrados do Setor
-            await pagina.locator("#perfil-122").check()
+            for permissao in permissoes_basicas:
+                await pagina.locator(f"#{permissao}").check()
 
             await pagina.get_by_role("button", name="Salvar").click()
 
             links = pagina.get_by_role("link", name="Selecionar Orgão")
-            print("links", await links.count())
-            await pagina.get_by_role("textbox").fill("")
 
-            await pagina.get_by_role("button", name="Salvar").click()
+            for i in range(await links.count()):
+                await links.nth(i).click()
+                await pagina.get_by_role("textbox").fill(lotacao)
+                await pagina.get_by_title(lotacao).locator(
+                    "[id=\"node\\.guid\"]").check()
+                await pagina.get_by_role("button", name="Salvar").click()
+                await pagina.get_by_label("Voltar").click()
+
+            await pagina.get_by_label("Voltar").click()
 
     async with async_playwright() as p:
         pagina = await configurar_navegador()
@@ -191,17 +202,16 @@ async def main():
         await acessar_pagina(pagina, url_acesso_cidadao_admin)
 
         cpf = "104.093.137-50"
+        papel = "TESTE DO CALDARA"
+        lotacao = "LAB TOX"
 
         # await acessar_pagina_grupos_e_servidores(pagina, ACESSO_CIDADAO_ADMIN.GRUPOS_E_SERVIDORES.value, GRUPO_E_SERVIDOR.SERVIDOR.value)
         # await pesquisar_por_cpf_pagina_servidor(pagina, cpf)
         # await acessar_papeis(pagina)
 
-        papel = "TESTE DO CALDARA"
-        lotacao = "LAB TOX"
-
         await acessar_pagina_sistemas(pagina, ACESSO_CIDADAO_ADMIN.SISTEMAS.value)
         await pesquisar_por_cpf_pagina_sistemas(pagina, cpf)
-        await cadastrar_permissoes(pagina, f"{papel} ({lotacao})", None)
+        await cadastrar_permissoes(pagina, papel, lotacao)
 
         # papel_existe = await verificar_papel(pagina, papel)
         # print("papel_existe ", papel_existe)
