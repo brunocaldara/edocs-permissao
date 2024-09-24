@@ -4,6 +4,7 @@ import os
 import re
 
 from dotenv import load_dotenv
+from openpyxl import load_workbook
 from playwright.async_api import async_playwright
 
 from enums import ACESSO_CIDADAO_ADMIN, GRUPO_E_SERVIDOR
@@ -13,7 +14,8 @@ load_dotenv()
 
 
 async def main():
-    sufixo = " - PCIES"
+    sufixo_permissao = " - PCIES"
+    planilha_excel = "permissao-edocs.xlsx"
 
     permissoes_basicas = [
         # "Acessar Caixa de Documentos de Órgão/Setor (Encaminhamentos)"
@@ -44,6 +46,12 @@ async def main():
             }
 
         return proxy_config
+
+    def configurar_excel():
+        diretorio_excel = os.path.join(
+            os.getcwd(), "src", "dados", planilha_excel)
+        wb = load_workbook(diretorio_excel, data_only=True)
+        return wb.active
 
     async def configurar_navegador():
         navegador = await p.chromium.launch(
@@ -195,6 +203,12 @@ async def main():
             await pagina.get_by_label("Voltar").click()
 
     async with async_playwright() as p:
+        teste = configurar_excel()
+        for row in teste.iter_rows(values_only=True):
+            for cell in row:
+                print(cell)
+        return
+
         pagina = await configurar_navegador()
         await acessar_pagina(pagina, os.getenv("ACESSO_CIDADAO_URL"))
         await realizar_login(pagina)
