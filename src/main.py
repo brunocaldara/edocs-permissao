@@ -15,7 +15,15 @@ load_dotenv()
 
 async def main():
     sufixo_permissao = " - PCIES"
-    planilha_excel = "permissao-edocs.xlsx"
+    excel_nome = "permissao-edocs.xlsx"
+    excel_coluna_minima = 1
+    excel_coluna_maxima = 5
+    excel_linha_minima = 2
+    excel_coluna_nome = 0
+    excel_coluna_cpf = 1
+    excel_coluna_lotacao = 2
+    excel_coluna_funcao = 3
+    excel_coluna_acao = 4
 
     permissoes_basicas = [
         # "Acessar Caixa de Documentos de Órgão/Setor (Encaminhamentos)"
@@ -47,9 +55,9 @@ async def main():
 
         return proxy_config
 
-    def configurar_excel():
+    def ler_excel():
         diretorio_excel = os.path.join(
-            os.getcwd(), "src", "dados", planilha_excel)
+            os.getcwd(), "src", "dados", excel_nome)
         wb = load_workbook(diretorio_excel, data_only=True)
         return wb.active
 
@@ -140,7 +148,7 @@ async def main():
             if botao_excluir_papel is not None:
                 await botao_excluir_papel.click()
 
-    async def cadastrar_lotacao(pagina, papel, lotacao):
+    async def cadastrar_lotacao(pagina, funcao, lotacao):
         # https://stackoverflow.com/questions/77014199/python-playwright-want-to-print-all-text-in-table-but-finds-0-rows
         tabela_papeis = pagina.locator("table")
         linhas_papeis = tabela_papeis.locator("tbody tr")
@@ -152,7 +160,7 @@ async def main():
         for i in range(await linhas_papeis.count()):
             colunas_papeis = linhas_papeis.nth(i).locator("td")
             for j in range(await colunas_papeis.count()):
-                if operator.contains(await colunas_papeis.nth(j).inner_text(), papel):
+                if operator.contains(await colunas_papeis.nth(j).inner_text(), funcao):
                     coluna_botoes_acoes = colunas_papeis.nth(
                         posicao_coluna_botoes_acoes)
                     break
@@ -168,10 +176,10 @@ async def main():
                 await pagina.get_by_role("button", name="Selecionar").click()
                 await pagina.get_by_label("Voltar").click()
 
-    async def cadastrar_permissoes(pagina, papel, lotacao):
+    async def cadastrar_permissoes(pagina, funcao, lotacao):
         linhas_papeis = await retornar_linhas_tabela(pagina)
         linha_papel = None
-        papel_lotacao = f"{papel} ({lotacao})"
+        papel_lotacao = f"{funcao} ({lotacao})"
 
         for i in range(await linhas_papeis.count()):
             colunas_papeis = linhas_papeis.nth(i).locator("td")
@@ -203,11 +211,7 @@ async def main():
             await pagina.get_by_label("Voltar").click()
 
     async with async_playwright() as p:
-        teste = configurar_excel()
-        for row in teste.iter_rows(values_only=True):
-            for cell in row:
-                print(cell)
-        return
+        excel = ler_excel()
 
         pagina = await configurar_navegador()
         await acessar_pagina(pagina, os.getenv("ACESSO_CIDADAO_URL"))
@@ -215,33 +219,39 @@ async def main():
         url_acesso_cidadao_admin = await buscar_url_acesso_cidadao_admin(pagina)
         await acessar_pagina(pagina, url_acesso_cidadao_admin)
 
-        cpf = "104.093.137-50"
-        papel = "TESTE DO CALDARA"
-        lotacao = "LAB TOX"
+        for linha in excel.iter_rows(values_only=True, min_col=excel_coluna_minima,
+                                     max_col=excel_coluna_maxima, min_row=excel_linha_minima):
+            nome = linha[excel_coluna_nome]
+            cpf = linha[excel_coluna_cpf]
+            lotacao = linha[excel_coluna_lotacao]
+            lotacao_sigla = lotacao[0:lotacao.index(
+                "-")].strip() if lotacao is not None else None
+            funcao = linha[excel_coluna_funcao]
+            acao = linha[excel_coluna_acao]
 
-        # await acessar_pagina_grupos_e_servidores(pagina, ACESSO_CIDADAO_ADMIN.GRUPOS_E_SERVIDORES.value, GRUPO_E_SERVIDOR.SERVIDOR.value)
-        # await pesquisar_por_cpf_pagina_servidor(pagina, cpf)
-        # await acessar_papeis(pagina)
+            # await acessar_pagina_grupos_e_servidores(pagina, ACESSO_CIDADAO_ADMIN.GRUPOS_E_SERVIDORES.value, GRUPO_E_SERVIDOR.SERVIDOR.value)
+            # await pesquisar_por_cpf_pagina_servidor(pagina, cpf)
+            # await acessar_papeis(pagina)
 
-        await acessar_pagina_sistemas(pagina, ACESSO_CIDADAO_ADMIN.SISTEMAS.value)
-        await pesquisar_por_cpf_pagina_sistemas(pagina, cpf)
-        await cadastrar_permissoes(pagina, papel, lotacao)
+            await acessar_pagina_sistemas(pagina, ACESSO_CIDADAO_ADMIN.SISTEMAS.value)
+            await pesquisar_por_cpf_pagina_sistemas(pagina, cpf)
+            await cadastrar_permissoes(pagina, funcao, lotacao_sigla)
 
-        # papel_existe = await verificar_papel(pagina, papel)
-        # print("papel_existe ", papel_existe)
-        # if not papel_existe:
-        #     await cadastrar_papel(pagina, papel)
-        #     await cadastrar_lotacao(pagina, papel, lotacao)
-        #     await acessar_pagina(pagina, url_acesso_cidadao_admin)
-        #     await acessar_pagina_sistemas(pagina, ACESSO_CIDADAO_ADMIN.SISTEMAS.value)
-        #     await pesquisar_por_cpf_pagina_sistemas(pagina, cpf)
+            # papel_existe = await verificar_papel(pagina, funcao)
+            # print("papel_existe ", papel_existe)
+            # if not papel_existe:
+            #     await cadastrar_papel(pagina, funcao)
+            #     await cadastrar_lotacao(pagina, funcao, lotacao_sigla)
+            #     await acessar_pagina(pagina, url_acesso_cidadao_admin)
+            #     await acessar_pagina_sistemas(pagina, ACESSO_CIDADAO_ADMIN.SISTEMAS.value)
+            #     await pesquisar_por_cpf_pagina_sistemas(pagina, cpf)
 
-        #     papel_existe = await verificar_papel(pagina, papel)
-        #     print("papel_existe ", papel_existe)
+            #     papel_existe = await verificar_papel(pagina, funcao)
+            #     print("papel_existe ", papel_existe)
 
-        #     await cadastrar_permissoes(pagina, f"{papel} ({lotacao})", None)
-        # else:
-        #     await remover_papel(pagina, papel)
+            #     await cadastrar_permissoes(pagina, f"{funcao} ({lotacao_sigla})", None)
+            # else:
+            #     await remover_papel(pagina, funcao)
 
         await pagina.pause()
     # browser.close()
