@@ -229,6 +229,9 @@ async def main():
             funcao = linha[excel_coluna_funcao]
             acao = linha[excel_coluna_acao]
 
+            if nome == None or cpf == None or lotacao_sigla == None or funcao == None or acao == None:
+                continue
+
             # await acessar_pagina_grupos_e_servidores(pagina, ACESSO_CIDADAO_ADMIN.GRUPOS_E_SERVIDORES.value, GRUPO_E_SERVIDOR.SERVIDOR.value)
             # await pesquisar_por_cpf_pagina_servidor(pagina, cpf)
             # await acessar_papeis(pagina)
